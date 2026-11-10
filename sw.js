@@ -1,5 +1,5 @@
 // Offline cache for the app shell. Bump VERSION when you change a file.
-const VERSION = 'pp-v1';
+const VERSION = 'pp-v2';
 const SHELL = [
   './',
   './index.html',
@@ -27,7 +27,11 @@ self.addEventListener('fetch', (e) => {
   if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request)
-        .then((r) => { const copy = r.clone(); caches.open(VERSION).then((c) => c.put('./index.html', copy)); return r; })
+        .then((r) => {
+          // Only trust a good answer; a 404 or error page must never replace the cached app.
+          if (!r.ok) return caches.match('./index.html').then((hit) => hit || r);
+          const copy = r.clone(); caches.open(VERSION).then((c) => c.put('./index.html', copy)); return r;
+        })
         .catch(() => caches.match('./index.html'))
     );
     return;
